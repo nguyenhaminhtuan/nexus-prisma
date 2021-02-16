@@ -1,0 +1,83 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  USER   @map("user")
+  ADMIN  @map("admin")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  email         String    @unique
+  password      String
+  fullName      String
+  avatarUrl     String?
+  role          UserRole  @default(USER)
+  actived       Boolean   @default(true)
+  emailVerified Boolean   @default(false)
+  loginCount    Int       @default(0)
+  deactivedAt   DateTime?
+  lastLoginAt   DateTime?
+  followers     User[]    @relation("UserFollows", references: [id])
+  following     User[]    @relation("UserFollows", references: [id])
+  posts         Post[]
+  likes         Like[]
+  comments      Comment[]
+
+  @@index([id, createdAt])
+  @@index([email])
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  title     String
+  content   String
+  published Boolean   @default(false)
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id])
+  likes     Like[]
+  comments  Comment[]
+}
+
+enum LikeType {
+  LIKE
+  HEART
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  type      LikeType @default(LIKE)
+  userId    String
+  postId    String
+  commentId String
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+  comment   Comment  @relation(fields: [commentId], references: [id])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  body      String
+  userId    String
+  postId    String
+  commentId String
+  user      User      @relation(fields: [userId], references: [id])
+  post      Post      @relation(fields: [postId], references: [id])
+  comment   Comment   @relation("CommentReplies", fields: [commentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  likes     Like[]
+}
