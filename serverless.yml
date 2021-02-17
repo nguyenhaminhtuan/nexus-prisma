@@ -1,0 +1,50 @@
+service: apollo-lambda
+
+provider:
+  name: aws
+  stage: ${opt:stage, 'dev'}
+  region: ap-southeast-1
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  apiName: ${opt:stage, self:provider.stage, 'dev'}
+  environment:
+    DATABASE_URL: ${env:DATABASE_URL}
+
+useDotenv: true
+
+resources:
+  Resources:
+    CognitoUserPoolMyUserPool:
+      Type: AWS::Cognito::UserPool
+
+functions:
+  graphql:
+    handler: src/index.graphql
+    events:
+      - http:
+          path: graphql
+          method: post
+          cors: true
+
+      - http:
+          path: graphql
+          method: get
+          cors: true
+
+package:
+  individually: true
+
+custom:
+  webpack:
+    includeModules:
+      forceExclude:
+        - aws-sdk
+    packagerOptions:
+      scripts:
+        - prisma generate
+  serverless-offline:
+    httpPort: 4000
+
+plugins:
+  - serverless-webpack
+  - serverless-offline

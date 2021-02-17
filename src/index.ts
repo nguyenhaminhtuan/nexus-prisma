@@ -1,39 +1,26 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
-import expressJwt from 'express-jwt';
-import { ApolloServer } from 'apollo-server-express';
+import { ApolloServer } from 'apollo-server-lambda';
+import depthLimit from 'graphql-depth-limit';
 import env from './config/env';
-import logger from './utils/logger';
-import context from './context';
 import schema from './schema';
-
-const app = express();
-
-app.use(cors({ origin: true, credentials: true }));
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(compression());
-app.use(
-  expressJwt({
-    secret: env.jwtSecret,
-    credentialsRequired: false,
-    algorithms: ['RS256', 'HS256'],
-  })
-);
+import context from './context';
 
 const server = new ApolloServer({
   schema,
   context,
-  logger,
-  uploads: {
-    maxFileSize: 10 * 1000 * 1000, // 10MB
-    maxFiles: 5,
+  introspection: !env.isProd,
+  playground: !env.isProd && {
+    endpoint: '/dev/graphql',
   },
+  uploads: {
+    maxFileSize: 10 * 1000 * 1000,
+    maxFiles: 10,
+  },
+  validationRules: [depthLimit(10)],
 });
 
-server.applyMiddleware({ app });
-
-app.listen(env.app.port, () =>
-  logger.info(`Server ready at port ${env.app.port}`)
-);
+export const graphql = server.createHandler({
+  cors: {
+    origin: true,
+    credentials: true,
+  },
+});

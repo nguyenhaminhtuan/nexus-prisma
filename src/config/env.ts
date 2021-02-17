@@ -1,12 +1,9 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
 const env = {
   isProd: process.env.NODE_ENV === 'production',
-  app: {
-    port: process.env.PORT || 4000,
+  auth: {
+    issuer: process.env.COGNITO_URL || '',
+    audience: process.env.COGNITO_CLIENT_ID || '',
   },
-  jwtSecret: process.env.JWT_SECRET || 'meowmeowmeow',
 };
 
 export default env;

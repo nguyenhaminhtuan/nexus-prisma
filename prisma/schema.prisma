@@ -4,7 +4,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 enum UserRole {
@@ -31,9 +32,6 @@ model User {
   posts         Post[]
   likes         Like[]
   comments      Comment[]
-
-  @@index([id, createdAt])
-  @@index([email])
 }
 
 model Post {

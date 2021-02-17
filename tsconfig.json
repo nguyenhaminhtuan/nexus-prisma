@@ -4,8 +4,6 @@
     "module": "commonjs",
     "lib": ["es2018", "es2018.asynciterable"],
     "outDir": "dist",
-    "sourceMap": true,
-    "declaration": true,
     "strict": true,
     "strictPropertyInitialization": false,
     "esModuleInterop": true,
