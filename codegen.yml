@@ -2,13 +2,13 @@ overwrite: true
 schema: 'http://localhost:4000/dev/graphql'
 documents: null
 generates:
-  src/graphql-typegen.ts:
+  src/type-generator.ts:
     plugins:
       - 'typescript'
       - 'typescript-resolvers'
     config:
       useIndexSignature: true
-      contextType: ./context#Context
+      contextType: ./graphql#Context
 hooks:
   afterAllFileWrite:
     - prettier --write

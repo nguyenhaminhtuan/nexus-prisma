@@ -7,9 +7,7 @@ export interface PaginateLoader {
   cursor?: string;
 }
 
-const dataloader = {
+export default {
   ...userLoader,
   ...postLoader,
 };
-
-export default dataloader;

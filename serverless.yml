@@ -8,28 +8,32 @@ provider:
   lambdaHashingVersion: 20201221
   apiName: ${opt:stage, self:provider.stage, 'dev'}
   environment:
+    COGNITO_URL: ${env:COGNITO_URL}
     DATABASE_URL: ${env:DATABASE_URL}
 
 useDotenv: true
 
-resources:
-  Resources:
-    CognitoUserPoolMyUserPool:
-      Type: AWS::Cognito::UserPool
-
 functions:
+  authorizer:
+    handler: src/authorizer.default
   graphql:
-    handler: src/index.graphql
+    handler: src/graphql.default
     events:
       - http:
           path: graphql
           method: post
           cors: true
-
       - http:
           path: graphql
           method: get
           cors: true
+  preSignUp:
+    handler: src/cognito.preSignUp
+    events:
+      - cognitoUserPool:
+          trigger: PreSignUp
+          pool: ${env:COGNITO_USER_POOL}
+          existing: true
 
 package:
   individually: true

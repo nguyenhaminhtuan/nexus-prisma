@@ -3,7 +3,7 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig,
 } from 'graphql';
-import { Context } from './context';
+import { Context } from './graphql';
 export type Maybe<T> = T | null;
 export type Exact<T extends { [key: string]: unknown }> = {
   [K in keyof T]: T[K];
@@ -44,6 +44,31 @@ export type QueryPostsArgs = {
   last?: Maybe<Scalars['String']>;
 };
 
+export type Mutation = {
+  __typename?: 'Mutation';
+  ok: Scalars['Boolean'];
+  createDraft?: Maybe<Post>;
+  publishPost?: Maybe<Post>;
+  updatePost?: Maybe<Post>;
+  deletePost?: Maybe<Scalars['Boolean']>;
+};
+
+export type MutationCreateDraftArgs = {
+  input: CreateDraftInput;
+};
+
+export type MutationPublishPostArgs = {
+  postId: Scalars['String'];
+};
+
+export type MutationUpdatePostArgs = {
+  postId: Scalars['String'];
+};
+
+export type MutationDeletePostArgs = {
+  postId: Scalars['String'];
+};
+
 export type PageInfo = {
   __typename?: 'PageInfo';
   endCursor: Scalars['String'];
@@ -59,6 +84,12 @@ export type Connection = {
   pageInfo: PageInfo;
 };
 
+export enum Gender {
+  Male = 'MALE',
+  Female = 'FEMALE',
+  Other = 'OTHER',
+}
+
 export type User = {
   __typename?: 'User';
   id: Scalars['ID'];
@@ -69,12 +100,17 @@ export type User = {
   avatarUrl?: Maybe<Scalars['String']>;
   coverPicUrl?: Maybe<Scalars['String']>;
   isActived: Scalars['Boolean'];
-  posts?: Maybe<Array<Post>>;
+  profile: Profile;
+  posts: Array<Post>;
+  followers: Array<User>;
+  following: Array<User>;
 };
 
 export type Profile = {
   __typename?: 'Profile';
   bio: Scalars['String'];
+  gender?: Maybe<Gender>;
+  birthDay?: Maybe<Scalars['DateTime']>;
 };
 
 export type Post = {
@@ -97,6 +133,11 @@ export type PostConnection = Connection & {
   totalCount: Scalars['Int'];
   edges: Array<PostEdge>;
   pageInfo: PageInfo;
+};
+
+export type CreateDraftInput = {
+  title?: Maybe<Scalars['String']>;
+  content?: Maybe<Scalars['String']>;
 };
 
 export type WithIndex<TObject> = TObject & Record<string, any>;
@@ -223,15 +264,18 @@ export type ResolversTypes = ResolversObject<{
   Boolean: ResolverTypeWrapper<Scalars['Boolean']>;
   String: ResolverTypeWrapper<Scalars['String']>;
   Int: ResolverTypeWrapper<Scalars['Int']>;
+  Mutation: ResolverTypeWrapper<{}>;
   PageInfo: ResolverTypeWrapper<PageInfo>;
   Edge: ResolversTypes['PostEdge'];
   Connection: ResolversTypes['PostConnection'];
+  Gender: Gender;
   User: ResolverTypeWrapper<User>;
   ID: ResolverTypeWrapper<Scalars['ID']>;
   Profile: ResolverTypeWrapper<Profile>;
   Post: ResolverTypeWrapper<Post>;
   PostEdge: ResolverTypeWrapper<PostEdge>;
   PostConnection: ResolverTypeWrapper<PostConnection>;
+  CreateDraftInput: CreateDraftInput;
 }>;
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -241,6 +285,7 @@ export type ResolversParentTypes = ResolversObject<{
   Boolean: Scalars['Boolean'];
   String: Scalars['String'];
   Int: Scalars['Int'];
+  Mutation: {};
   PageInfo: PageInfo;
   Edge: ResolversParentTypes['PostEdge'];
   Connection: ResolversParentTypes['PostConnection'];
@@ -250,7 +295,17 @@ export type ResolversParentTypes = ResolversObject<{
   Post: Post;
   PostEdge: PostEdge;
   PostConnection: PostConnection;
+  CreateDraftInput: CreateDraftInput;
 }>;
+
+export type LengthDirectiveArgs = { max?: Maybe<Scalars['Int']> };
+
+export type LengthDirectiveResolver<
+  Result,
+  Parent,
+  ContextType = Context,
+  Args = LengthDirectiveArgs
+> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
 
 export interface DateTimeScalarConfig
   extends GraphQLScalarTypeConfig<ResolversTypes['DateTime'], any> {
@@ -274,6 +329,37 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryPostsArgs, 'first'>
+  >;
+}>;
+
+export type MutationResolvers<
+  ContextType = Context,
+  ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']
+> = ResolversObject<{
+  ok?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  createDraft?: Resolver<
+    Maybe<ResolversTypes['Post']>,
+    ParentType,
+    ContextType,
+    RequireFields<MutationCreateDraftArgs, 'input'>
+  >;
+  publishPost?: Resolver<
+    Maybe<ResolversTypes['Post']>,
+    ParentType,
+    ContextType,
+    RequireFields<MutationPublishPostArgs, 'postId'>
+  >;
+  updatePost?: Resolver<
+    Maybe<ResolversTypes['Post']>,
+    ParentType,
+    ContextType,
+    RequireFields<MutationUpdatePostArgs, 'postId'>
+  >;
+  deletePost?: Resolver<
+    Maybe<ResolversTypes['Boolean']>,
+    ParentType,
+    ContextType,
+    RequireFields<MutationDeletePostArgs, 'postId'>
   >;
 }>;
 
@@ -323,11 +409,10 @@ export type UserResolvers<
     ContextType
   >;
   isActived?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  posts?: Resolver<
-    Maybe<Array<ResolversTypes['Post']>>,
-    ParentType,
-    ContextType
-  >;
+  profile?: Resolver<ResolversTypes['Profile'], ParentType, ContextType>;
+  posts?: Resolver<Array<ResolversTypes['Post']>, ParentType, ContextType>;
+  followers?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
+  following?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -336,6 +421,12 @@ export type ProfileResolvers<
   ParentType extends ResolversParentTypes['Profile'] = ResolversParentTypes['Profile']
 > = ResolversObject<{
   bio?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  gender?: Resolver<Maybe<ResolversTypes['Gender']>, ParentType, ContextType>;
+  birthDay?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -373,6 +464,7 @@ export type PostConnectionResolvers<
 export type Resolvers<ContextType = Context> = ResolversObject<{
   DateTime?: GraphQLScalarType;
   Query?: QueryResolvers<ContextType>;
+  Mutation?: MutationResolvers<ContextType>;
   PageInfo?: PageInfoResolvers<ContextType>;
   Edge?: EdgeResolvers<ContextType>;
   Connection?: ConnectionResolvers<ContextType>;
@@ -388,3 +480,14 @@ export type Resolvers<ContextType = Context> = ResolversObject<{
  * Use "Resolvers" root object instead. If you wish to get "IResolvers", add "typesPrefix: I" to your config.
  */
 export type IResolvers<ContextType = Context> = Resolvers<ContextType>;
+export type DirectiveResolvers<ContextType = Context> = ResolversObject<{
+  length?: LengthDirectiveResolver<any, any, ContextType>;
+}>;
+
+/**
+ * @deprecated
+ * Use "DirectiveResolvers" root object instead. If you wish to get "IDirectiveResolvers", add "typesPrefix: I" to your config.
+ */
+export type IDirectiveResolvers<
+  ContextType = Context
+> = DirectiveResolvers<ContextType>;

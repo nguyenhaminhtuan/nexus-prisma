@@ -1,7 +1,13 @@
 import { gql } from 'apollo-server-lambda';
-import { Resolvers } from '../graphql-typegen';
+import { Resolvers } from '../type-generator';
 
 export const User = gql`
+  enum Gender {
+    MALE
+    FEMALE
+    OTHER
+  }
+
   type User {
     id: ID!
     createdAt: DateTime!
@@ -11,11 +17,16 @@ export const User = gql`
     avatarUrl: String
     coverPicUrl: String
     isActived: Boolean!
-    posts: [Post!]
+    profile: Profile!
+    posts: [Post!]!
+    followers: [User!]!
+    following: [User!]!
   }
 
   type Profile {
     bio: String!
+    gender: Gender
+    birthDay: DateTime
   }
 
   extend type Query {
