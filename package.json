@@ -4,6 +4,8 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "serverless offline",
+    "seed": "prisma db seed --preview-feature",
+    "migration": "prisma migrate deploy --preview-feature",
     "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "typegen": "graphql-codegen --config codegen.yml"

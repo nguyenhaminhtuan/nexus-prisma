@@ -6,6 +6,13 @@ import schema from './schema';
 import db from './db';
 import loader from './loader';
 import { getToken, verifyToken } from './utils/auth';
+import cognito from 'aws-sdk/clients/cognitoidentityserviceprovider';
+
+const c = new cognito();
+
+c.listUsers({ UserPoolId: 'ap-southeast-1_PASMzI917' })
+  .promise()
+  .then((res) => console.log(res.Users?.map((user) => user.Attributes)));
 
 interface HandlerParams {
   event: APIGatewayProxyEvent;
