@@ -1,11 +1,12 @@
-import { ApolloServer } from 'apollo-server-lambda';
+import { ApolloServer, AuthenticationError } from 'apollo-server-lambda';
 import { APIGatewayProxyEvent, Context as LambdaContext } from 'aws-lambda';
 import depthLimit from 'graphql-depth-limit';
 import env from './config/env';
 import schema from './schema';
 import db from './db';
-import loader from './loader';
+import loader from './loaders';
 import { getToken, verifyToken } from './utils/auth';
+
 interface HandlerParams {
   event: APIGatewayProxyEvent;
   context: LambdaContext;
@@ -14,7 +15,9 @@ interface HandlerParams {
 export interface Context extends HandlerParams {
   db: typeof db;
   loader: typeof loader;
-  user: any;
+  user: {
+    sub: string;
+  };
 }
 
 const context = async ({ event, context }: HandlerParams) => {
@@ -22,10 +25,14 @@ const context = async ({ event, context }: HandlerParams) => {
   const tokenString = event.headers.Authorization;
 
   if (tokenString) {
-    const token = getToken(tokenString);
-    const payload = await verifyToken(token);
+    try {
+      const token = getToken(tokenString);
+      const payload = await verifyToken(token);
 
-    user = payload;
+      user = payload;
+    } catch (error) {
+      throw new AuthenticationError(error.message);
+    }
   }
 
   return { event, context, db, loader, user };
@@ -42,6 +49,7 @@ const server = new ApolloServer({
     maxFileSize: 10 * 1000 * 1000,
     maxFiles: 10,
   },
+  tracing: true,
   validationRules: [depthLimit(10)],
 });
 

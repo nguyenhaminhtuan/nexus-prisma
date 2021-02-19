@@ -4,59 +4,73 @@ datasource db {
 }
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "rhel-openssl-1.0.x"]
+  previewFeatures = ["groupBy", "createMany"]
 }
 
-enum UserRole {
-  USER   @map("user")
-  ADMIN  @map("admin")
+enum UserStatus {
+  enabled
+  disabled
 }
 
 model User {
-  id            String    @id @default(cuid())
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  email         String    @unique
-  password      String
+  id            String     @id @default(uuid())
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  email         String     @unique
   fullName      String
   avatarUrl     String?
-  role          UserRole  @default(USER)
-  actived       Boolean   @default(true)
-  emailVerified Boolean   @default(false)
-  loginCount    Int       @default(0)
-  deactivedAt   DateTime?
+  status        UserStatus @default(disabled)
+  emailVerified Boolean    @default(false)
+  disabledAt    DateTime?
   lastLoginAt   DateTime?
-  followers     User[]    @relation("UserFollows", references: [id])
-  following     User[]    @relation("UserFollows", references: [id])
+  profile       Profile?
+  followers     User[]     @relation("UserFollows", references: [id])
+  following     User[]     @relation("UserFollows", references: [id])
   posts         Post[]
   likes         Like[]
   comments      Comment[]
 }
 
+enum Gender {
+  male
+  female
+  other
+}
+
+model Profile {
+  id       String    @id @default(cuid())
+  bio      String    @default("")
+  gender   Gender?
+  birthDay DateTime?
+  phone    String?
+  userId   String
+  user     User      @relation(fields: [userId], references: [id])
+}
+
 model Post {
-  id        String    @id @default(cuid())
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  title     String
-  content   String
-  published Boolean   @default(false)
-  authorId  String
-  author    User      @relation(fields: [authorId], references: [id])
-  likes     Like[]
-  comments  Comment[]
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  content     String
+  isPublished Boolean   @default(false)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  likes       Like[]
+  comments    Comment[]
 }
 
 enum LikeType {
-  LIKE
-  HEART
+  like
+  heart
 }
 
 model Like {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  type      LikeType @default(LIKE)
+  type      LikeType @default(like)
   userId    String
   postId    String
   commentId String

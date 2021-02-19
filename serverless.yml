@@ -1,4 +1,4 @@
-service: apollo-lambda
+service: swanners
 
 provider:
   name: aws
@@ -32,7 +32,28 @@ functions:
     events:
       - cognitoUserPool:
           trigger: PreSignUp
-          pool: ${env:COGNITO_USER_POOL}
+          pool: ${self.service}-${self.provider.stage}
+          existing: true
+  preConfirmation:
+    handler: src/cognito.preConfirmation
+    events:
+      - cognitoUserPool:
+          trigger: PreConfirmation
+          pool: ${self.service}-${self.provider.stage}
+          existing: true
+  postAuthentication:
+    handler: src/cognito.postAuthentication
+    events:
+      - cognitoUserPool:
+          trigger: PostAuthentication
+          pool: ${self.service}-${self.provider.stage}
+          existing: true
+  preTokenGeneration:
+    handler: src/cognito.preTokenGeneration
+    events:
+      - cognitoUserPool:
+          trigger: PreTokenGeneration
+          pool: ${self.service}-${self.provider.stage}
           existing: true
 
 package:

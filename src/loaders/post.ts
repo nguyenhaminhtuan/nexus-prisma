@@ -8,13 +8,9 @@ const postLoader = {
   getPostsByUser: new DataLoader<PaginateLoader, Post[]>(async (params) => {
     const ids = params.map((param) => param.id);
     const posts = await db.post.findMany({
-      where: { authorId: { in: ids } },
-      take: params[0].take,
-      cursor: {
-        id: params[0].cursor,
-      },
+      where: { userId: { in: ids } },
     });
-    const postsByAuthorId = loGroupBy(posts, (post) => post.authorId);
+    const postsByAuthorId = loGroupBy(posts, (post) => post.userId);
 
     return ids.map((id) => postsByAuthorId[id]);
   }),

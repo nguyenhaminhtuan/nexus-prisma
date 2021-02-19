@@ -9,6 +9,12 @@ generates:
     config:
       useIndexSignature: true
       contextType: ./graphql#Context
+      mappers:
+        User: '@prisma/client/index.d#User as UserModel'
+        Profile: '@prisma/client/index.d#Profile as ProfileModel'
+        Post: '@prisma/client/index.d#Post as PostModel'
+        Like: '@prisma/client/index.d#Like as LikeModel'
+        Comment: '@prisma/client/index.d#Comment as CommentModel'
 hooks:
   afterAllFileWrite:
     - prettier --write

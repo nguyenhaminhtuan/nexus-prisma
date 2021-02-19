@@ -2,23 +2,27 @@ import { gql } from 'apollo-server-lambda';
 import { Resolvers } from '../type-generator';
 
 export const User = gql`
-  enum Gender {
-    MALE
-    FEMALE
-    OTHER
+  enum UserStatus {
+    enabled
+    disabled
   }
 
-  type User {
+  enum Gender {
+    male
+    female
+    other
+  }
+
+  type User implements Node {
     id: ID!
     createdAt: DateTime!
     updatedAt: DateTime!
     email: String
     fullName: String!
     avatarUrl: String
-    coverPicUrl: String
-    isActived: Boolean!
+    status: UserStatus!
     profile: Profile!
-    posts: [Post!]!
+    posts: [Post!]
     followers: [User!]!
     following: [User!]!
   }
@@ -27,6 +31,7 @@ export const User = gql`
     bio: String!
     gender: Gender
     birthDay: DateTime
+    phone: String
   }
 
   extend type Query {
@@ -35,11 +40,24 @@ export const User = gql`
 `;
 
 export const UserResolver: Resolvers = {
+  User: {
+    posts: async (root, args, ctx) => {
+      const posts = await ctx.db.user
+        .findUnique({ where: { id: root.id } })
+        .posts();
+      // const posts = await ctx.loader.getPostsByUser.load({
+      //   id: root.id,
+      //   take: 10,
+      // });
+      return posts;
+    },
+  },
   Query: {
     me: async (root, args, ctx) => {
-      const users = await ctx.db.user.findMany();
-      console.log(users);
-      return null;
+      return ctx.db.user.findUnique({
+        where: { id: ctx.user.sub },
+        include: { profile: true },
+      });
     },
   },
 };

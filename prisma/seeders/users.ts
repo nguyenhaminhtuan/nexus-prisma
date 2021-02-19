@@ -1,6 +1,10 @@
+import { UserStatus } from '@prisma/client';
+
 export const users = [
   {
-    id: 'e6fb9b54-9fd9-4ce6-8f8c-f8b6de3741ee',
+    id: 'a5a8d0bf-8c49-4b48-b670-2bab5d4cc405',
     email: 'nguyenhaminhtuan1997@gmail.com',
+    fullName: 'Nguyễn Hà Minh Tuấn',
+    status: UserStatus.enabled,
   },
 ];

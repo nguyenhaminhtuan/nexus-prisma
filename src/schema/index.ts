@@ -7,7 +7,6 @@ import { User, UserResolver } from './User';
 
 const typeDefs = gql`
   scalar DateTime
-  directive @length(max: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
   type Query {
     ok: Boolean!
@@ -17,18 +16,20 @@ const typeDefs = gql`
     ok: Boolean!
   }
 
+  interface Node {
+    id: ID!
+  }
+
   type PageInfo {
-    endCursor: String!
     hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
   }
 
-  interface Edge {
-    cursor: String!
-  }
-
-  interface Connection {
-    totalCount: Int!
-    pageInfo: PageInfo!
+  enum SortDirection {
+    ASC
+    DESC
   }
 `;
 

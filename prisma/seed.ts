@@ -1,11 +1,25 @@
 import { PrismaClient } from '@prisma/client';
+import { users } from './seeders/users';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // prisma.user.create({ data: {
-  //   id: 'e6fb9b54-9fd9-4ce6-8f8c-f8b6de3741ee',
-  // }})
+  await prisma.user.createMany({ data: users, skipDuplicates: true });
+  await prisma.profile.createMany({
+    data: users.map((user) => ({
+      userId: user.id,
+    })),
+    skipDuplicates: true,
+  });
+  await prisma.post.createMany({
+    data: Array(10000)
+      .fill(1)
+      .map(() => ({
+        content: 'haha',
+        isPublished: true,
+        userId: 'a5a8d0bf-8c49-4b48-b670-2bab5d4cc405',
+      })),
+  });
 }
 
 main()

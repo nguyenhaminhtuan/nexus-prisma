@@ -3,6 +3,13 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig,
 } from 'graphql';
+import {
+  User as UserModel,
+  Profile as ProfileModel,
+  Post as PostModel,
+  Like as LikeModel,
+  Comment as CommentModel,
+} from '@prisma/client/index.d';
 import { Context } from './graphql';
 export type Maybe<T> = T | null;
 export type Exact<T extends { [key: string]: unknown }> = {
@@ -12,6 +19,7 @@ export type MakeOptional<T, K extends keyof T> = Omit<T, K> &
   { [SubKey in K]?: Maybe<T[SubKey]> };
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> &
   { [SubKey in K]: Maybe<T[SubKey]> };
+export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export type RequireFields<T, K extends keyof T> = {
   [X in Exclude<keyof T, K>]?: T[X];
 } &
@@ -69,28 +77,35 @@ export type MutationDeletePostArgs = {
   postId: Scalars['String'];
 };
 
+export type Node = {
+  id: Scalars['ID'];
+};
+
 export type PageInfo = {
   __typename?: 'PageInfo';
-  endCursor: Scalars['String'];
   hasNextPage: Scalars['Boolean'];
+  hasPreviousPage: Scalars['Boolean'];
+  startCursor?: Maybe<Scalars['String']>;
+  endCursor?: Maybe<Scalars['String']>;
 };
 
-export type Edge = {
-  cursor: Scalars['String'];
-};
-
-export type Connection = {
-  totalCount: Scalars['Int'];
-  pageInfo: PageInfo;
-};
-
-export enum Gender {
-  Male = 'MALE',
-  Female = 'FEMALE',
-  Other = 'OTHER',
+export enum SortDirection {
+  Asc = 'ASC',
+  Desc = 'DESC',
 }
 
-export type User = {
+export enum UserStatus {
+  Enabled = 'enabled',
+  Disabled = 'disabled',
+}
+
+export enum Gender {
+  Male = 'male',
+  Female = 'female',
+  Other = 'other',
+}
+
+export type User = Node & {
   __typename?: 'User';
   id: Scalars['ID'];
   createdAt: Scalars['DateTime'];
@@ -98,10 +113,9 @@ export type User = {
   email?: Maybe<Scalars['String']>;
   fullName: Scalars['String'];
   avatarUrl?: Maybe<Scalars['String']>;
-  coverPicUrl?: Maybe<Scalars['String']>;
-  isActived: Scalars['Boolean'];
+  status: UserStatus;
   profile: Profile;
-  posts: Array<Post>;
+  posts?: Maybe<Array<Post>>;
   followers: Array<User>;
   following: Array<User>;
 };
@@ -111,24 +125,26 @@ export type Profile = {
   bio: Scalars['String'];
   gender?: Maybe<Gender>;
   birthDay?: Maybe<Scalars['DateTime']>;
+  phone?: Maybe<Scalars['String']>;
 };
 
-export type Post = {
+export type Post = Node & {
   __typename?: 'Post';
   id: Scalars['ID'];
   createdAt: Scalars['DateTime'];
   updatedAt: Scalars['DateTime'];
-  title: Scalars['String'];
   content: Scalars['String'];
+  isPublished: Scalars['Boolean'];
+  user: User;
 };
 
-export type PostEdge = Edge & {
+export type PostEdge = {
   __typename?: 'PostEdge';
   cursor: Scalars['String'];
   node: Post;
 };
 
-export type PostConnection = Connection & {
+export type PostConnection = {
   __typename?: 'PostConnection';
   totalCount: Scalars['Int'];
   edges: Array<PostEdge>;
@@ -136,8 +152,7 @@ export type PostConnection = Connection & {
 };
 
 export type CreateDraftInput = {
-  title?: Maybe<Scalars['String']>;
-  content?: Maybe<Scalars['String']>;
+  content: Scalars['String'];
 };
 
 export type WithIndex<TObject> = TObject & Record<string, any>;
@@ -265,16 +280,21 @@ export type ResolversTypes = ResolversObject<{
   String: ResolverTypeWrapper<Scalars['String']>;
   Int: ResolverTypeWrapper<Scalars['Int']>;
   Mutation: ResolverTypeWrapper<{}>;
-  PageInfo: ResolverTypeWrapper<PageInfo>;
-  Edge: ResolversTypes['PostEdge'];
-  Connection: ResolversTypes['PostConnection'];
-  Gender: Gender;
-  User: ResolverTypeWrapper<User>;
+  Node: ResolversTypes['User'] | ResolversTypes['Post'];
   ID: ResolverTypeWrapper<Scalars['ID']>;
-  Profile: ResolverTypeWrapper<Profile>;
-  Post: ResolverTypeWrapper<Post>;
-  PostEdge: ResolverTypeWrapper<PostEdge>;
-  PostConnection: ResolverTypeWrapper<PostConnection>;
+  PageInfo: ResolverTypeWrapper<PageInfo>;
+  SortDirection: SortDirection;
+  UserStatus: UserStatus;
+  Gender: Gender;
+  User: ResolverTypeWrapper<UserModel>;
+  Profile: ResolverTypeWrapper<ProfileModel>;
+  Post: ResolverTypeWrapper<PostModel>;
+  PostEdge: ResolverTypeWrapper<
+    Omit<PostEdge, 'node'> & { node: ResolversTypes['Post'] }
+  >;
+  PostConnection: ResolverTypeWrapper<
+    Omit<PostConnection, 'edges'> & { edges: Array<ResolversTypes['PostEdge']> }
+  >;
   CreateDraftInput: CreateDraftInput;
 }>;
 
@@ -286,26 +306,18 @@ export type ResolversParentTypes = ResolversObject<{
   String: Scalars['String'];
   Int: Scalars['Int'];
   Mutation: {};
-  PageInfo: PageInfo;
-  Edge: ResolversParentTypes['PostEdge'];
-  Connection: ResolversParentTypes['PostConnection'];
-  User: User;
+  Node: ResolversParentTypes['User'] | ResolversParentTypes['Post'];
   ID: Scalars['ID'];
-  Profile: Profile;
-  Post: Post;
-  PostEdge: PostEdge;
-  PostConnection: PostConnection;
+  PageInfo: PageInfo;
+  User: UserModel;
+  Profile: ProfileModel;
+  Post: PostModel;
+  PostEdge: Omit<PostEdge, 'node'> & { node: ResolversParentTypes['Post'] };
+  PostConnection: Omit<PostConnection, 'edges'> & {
+    edges: Array<ResolversParentTypes['PostEdge']>;
+  };
   CreateDraftInput: CreateDraftInput;
 }>;
-
-export type LengthDirectiveArgs = { max?: Maybe<Scalars['Int']> };
-
-export type LengthDirectiveResolver<
-  Result,
-  Parent,
-  ContextType = Context,
-  Args = LengthDirectiveArgs
-> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
 
 export interface DateTimeScalarConfig
   extends GraphQLScalarTypeConfig<ResolversTypes['DateTime'], any> {
@@ -363,30 +375,35 @@ export type MutationResolvers<
   >;
 }>;
 
+export type NodeResolvers<
+  ContextType = Context,
+  ParentType extends ResolversParentTypes['Node'] = ResolversParentTypes['Node']
+> = ResolversObject<{
+  __resolveType: TypeResolveFn<'User' | 'Post', ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+}>;
+
 export type PageInfoResolvers<
   ContextType = Context,
   ParentType extends ResolversParentTypes['PageInfo'] = ResolversParentTypes['PageInfo']
 > = ResolversObject<{
-  endCursor?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  hasPreviousPage?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
+  startCursor?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  endCursor?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type EdgeResolvers<
-  ContextType = Context,
-  ParentType extends ResolversParentTypes['Edge'] = ResolversParentTypes['Edge']
-> = ResolversObject<{
-  __resolveType: TypeResolveFn<'PostEdge', ParentType, ContextType>;
-  cursor?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-}>;
-
-export type ConnectionResolvers<
-  ContextType = Context,
-  ParentType extends ResolversParentTypes['Connection'] = ResolversParentTypes['Connection']
-> = ResolversObject<{
-  __resolveType: TypeResolveFn<'PostConnection', ParentType, ContextType>;
-  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  pageInfo?: Resolver<ResolversTypes['PageInfo'], ParentType, ContextType>;
 }>;
 
 export type UserResolvers<
@@ -403,14 +420,13 @@ export type UserResolvers<
     ParentType,
     ContextType
   >;
-  coverPicUrl?: Resolver<
-    Maybe<ResolversTypes['String']>,
+  status?: Resolver<ResolversTypes['UserStatus'], ParentType, ContextType>;
+  profile?: Resolver<ResolversTypes['Profile'], ParentType, ContextType>;
+  posts?: Resolver<
+    Maybe<Array<ResolversTypes['Post']>>,
     ParentType,
     ContextType
   >;
-  isActived?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  profile?: Resolver<ResolversTypes['Profile'], ParentType, ContextType>;
-  posts?: Resolver<Array<ResolversTypes['Post']>, ParentType, ContextType>;
   followers?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
   following?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -427,6 +443,7 @@ export type ProfileResolvers<
     ParentType,
     ContextType
   >;
+  phone?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -437,8 +454,9 @@ export type PostResolvers<
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   content?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  isPublished?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -465,9 +483,8 @@ export type Resolvers<ContextType = Context> = ResolversObject<{
   DateTime?: GraphQLScalarType;
   Query?: QueryResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
+  Node?: NodeResolvers<ContextType>;
   PageInfo?: PageInfoResolvers<ContextType>;
-  Edge?: EdgeResolvers<ContextType>;
-  Connection?: ConnectionResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
   Profile?: ProfileResolvers<ContextType>;
   Post?: PostResolvers<ContextType>;
@@ -480,14 +497,3 @@ export type Resolvers<ContextType = Context> = ResolversObject<{
  * Use "Resolvers" root object instead. If you wish to get "IResolvers", add "typesPrefix: I" to your config.
  */
 export type IResolvers<ContextType = Context> = Resolvers<ContextType>;
-export type DirectiveResolvers<ContextType = Context> = ResolversObject<{
-  length?: LengthDirectiveResolver<any, any, ContextType>;
-}>;
-
-/**
- * @deprecated
- * Use "DirectiveResolvers" root object instead. If you wish to get "IDirectiveResolvers", add "typesPrefix: I" to your config.
- */
-export type IDirectiveResolvers<
-  ContextType = Context
-> = DirectiveResolvers<ContextType>;

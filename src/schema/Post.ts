@@ -2,28 +2,28 @@ import { gql } from 'apollo-server-lambda';
 import { Resolvers } from '../type-generator';
 
 export const Post = gql`
-  type Post {
+  type Post implements Node {
     id: ID!
     createdAt: DateTime!
     updatedAt: DateTime!
-    title: String!
     content: String!
+    isPublished: Boolean!
+    user: User!
   }
 
-  type PostEdge implements Edge {
+  type PostEdge {
     cursor: String!
     node: Post!
   }
 
-  type PostConnection implements Connection {
+  type PostConnection {
     totalCount: Int!
     edges: [PostEdge!]!
     pageInfo: PageInfo!
   }
 
   input CreateDraftInput {
-    title: String
-    content: String
+    content: String!
   }
 
   extend type Query {
@@ -40,9 +40,35 @@ export const Post = gql`
 `;
 
 export const PostResolver: Resolvers = {
+  Post: {
+    user: async (root, args, ctx) => {
+      return ctx.loader.getUser.load(root.userId);
+    },
+  },
   Query: {
-    post: () => {
+    post: async (root, args, ctx) => {
+      return ctx.db.post.findUnique({ where: { id: args.postId } });
+    },
+    posts: async (root, args, ctx) => {
+      const count = await ctx.db.post.count();
+      await ctx.db.post.findMany({ take: count });
       return null;
+    },
+  },
+  Mutation: {
+    createDraft: async (root, { input }, ctx) => {
+      return ctx.db.post.create({
+        data: {
+          ...input,
+          userId: ctx.user.sub,
+        },
+      });
+    },
+    publishPost: async (root, args, ctx) => {
+      return ctx.db.post.update({
+        where: { id: args.postId },
+        data: { isPublished: true },
+      });
     },
   },
 };
