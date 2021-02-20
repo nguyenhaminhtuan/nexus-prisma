@@ -6,7 +6,9 @@ import {
 import {
   User as UserModel,
   Profile as ProfileModel,
+  Topic as TopicModel,
   Post as PostModel,
+  PostSeries as PostSeriesModel,
   Like as LikeModel,
   Comment as CommentModel,
 } from '@prisma/client/index.d';
@@ -41,6 +43,9 @@ export type Query = {
   me?: Maybe<User>;
   post?: Maybe<Post>;
   posts?: Maybe<PostConnection>;
+  topic?: Maybe<Topic>;
+  topics?: Maybe<Array<Topic>>;
+  topicByName?: Maybe<Topic>;
 };
 
 export type QueryPostArgs = {
@@ -52,6 +57,18 @@ export type QueryPostsArgs = {
   last?: Maybe<Scalars['String']>;
 };
 
+export type QueryTopicArgs = {
+  topicId: Scalars['String'];
+};
+
+export type QueryTopicsArgs = {
+  limit?: Maybe<Scalars['Int']>;
+};
+
+export type QueryTopicByNameArgs = {
+  name: Scalars['String'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   ok: Scalars['Boolean'];
@@ -59,6 +76,12 @@ export type Mutation = {
   publishPost?: Maybe<Post>;
   updatePost?: Maybe<Post>;
   deletePost?: Maybe<Scalars['Boolean']>;
+  createTopic?: Maybe<Topic>;
+  createSubTopic?: Maybe<Topic>;
+  updateTopic?: Maybe<Topic>;
+  deleteTopic?: Maybe<Topic>;
+  followTopic?: Maybe<Topic>;
+  unfollowTopic?: Maybe<Topic>;
 };
 
 export type MutationCreateDraftArgs = {
@@ -77,6 +100,31 @@ export type MutationDeletePostArgs = {
   postId: Scalars['String'];
 };
 
+export type MutationCreateTopicArgs = {
+  input: CreateTopicInput;
+};
+
+export type MutationCreateSubTopicArgs = {
+  input: CreateSubTopicInput;
+};
+
+export type MutationUpdateTopicArgs = {
+  topicId: Scalars['String'];
+  input: UpdateTopicInput;
+};
+
+export type MutationDeleteTopicArgs = {
+  topicId: Scalars['String'];
+};
+
+export type MutationFollowTopicArgs = {
+  topicId: Scalars['String'];
+};
+
+export type MutationUnfollowTopicArgs = {
+  topicId: Scalars['String'];
+};
+
 export type Node = {
   id: Scalars['ID'];
 };
@@ -89,7 +137,7 @@ export type PageInfo = {
   endCursor?: Maybe<Scalars['String']>;
 };
 
-export enum SortDirection {
+export enum SortOrder {
   Asc = 'ASC',
   Desc = 'DESC',
 }
@@ -153,6 +201,38 @@ export type PostConnection = {
 
 export type CreateDraftInput = {
   content: Scalars['String'];
+};
+
+export type Topic = Node & {
+  __typename?: 'Topic';
+  id: Scalars['ID'];
+  createdAt: Scalars['DateTime'];
+  updatedAt: Scalars['DateTime'];
+  name: Scalars['String'];
+  isActived: Scalars['Boolean'];
+  parent?: Maybe<Topic>;
+  children: Array<Topic>;
+  childrenCount: Scalars['Int'];
+  followerCount: Scalars['Int'];
+  posts?: Maybe<Array<Post>>;
+};
+
+export type TopicPostsArgs = {
+  limit?: Maybe<Scalars['Int']>;
+};
+
+export type CreateTopicInput = {
+  name: Scalars['String'];
+};
+
+export type CreateSubTopicInput = {
+  name: Scalars['String'];
+  parentId: Scalars['String'];
+};
+
+export type UpdateTopicInput = {
+  name: Scalars['String'];
+  isActived: Scalars['Boolean'];
 };
 
 export type WithIndex<TObject> = TObject & Record<string, any>;
@@ -280,10 +360,13 @@ export type ResolversTypes = ResolversObject<{
   String: ResolverTypeWrapper<Scalars['String']>;
   Int: ResolverTypeWrapper<Scalars['Int']>;
   Mutation: ResolverTypeWrapper<{}>;
-  Node: ResolversTypes['User'] | ResolversTypes['Post'];
+  Node:
+    | ResolversTypes['User']
+    | ResolversTypes['Post']
+    | ResolversTypes['Topic'];
   ID: ResolverTypeWrapper<Scalars['ID']>;
   PageInfo: ResolverTypeWrapper<PageInfo>;
-  SortDirection: SortDirection;
+  SortOrder: SortOrder;
   UserStatus: UserStatus;
   Gender: Gender;
   User: ResolverTypeWrapper<UserModel>;
@@ -296,6 +379,10 @@ export type ResolversTypes = ResolversObject<{
     Omit<PostConnection, 'edges'> & { edges: Array<ResolversTypes['PostEdge']> }
   >;
   CreateDraftInput: CreateDraftInput;
+  Topic: ResolverTypeWrapper<TopicModel>;
+  CreateTopicInput: CreateTopicInput;
+  CreateSubTopicInput: CreateSubTopicInput;
+  UpdateTopicInput: UpdateTopicInput;
 }>;
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -306,7 +393,10 @@ export type ResolversParentTypes = ResolversObject<{
   String: Scalars['String'];
   Int: Scalars['Int'];
   Mutation: {};
-  Node: ResolversParentTypes['User'] | ResolversParentTypes['Post'];
+  Node:
+    | ResolversParentTypes['User']
+    | ResolversParentTypes['Post']
+    | ResolversParentTypes['Topic'];
   ID: Scalars['ID'];
   PageInfo: PageInfo;
   User: UserModel;
@@ -317,6 +407,10 @@ export type ResolversParentTypes = ResolversObject<{
     edges: Array<ResolversParentTypes['PostEdge']>;
   };
   CreateDraftInput: CreateDraftInput;
+  Topic: TopicModel;
+  CreateTopicInput: CreateTopicInput;
+  CreateSubTopicInput: CreateSubTopicInput;
+  UpdateTopicInput: UpdateTopicInput;
 }>;
 
 export interface DateTimeScalarConfig
@@ -341,6 +435,24 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryPostsArgs, 'first'>
+  >;
+  topic?: Resolver<
+    Maybe<ResolversTypes['Topic']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryTopicArgs, 'topicId'>
+  >;
+  topics?: Resolver<
+    Maybe<Array<ResolversTypes['Topic']>>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryTopicsArgs, 'limit'>
+  >;
+  topicByName?: Resolver<
+    Maybe<ResolversTypes['Topic']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryTopicByNameArgs, 'name'>
   >;
 }>;
 
@@ -373,13 +485,53 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationDeletePostArgs, 'postId'>
   >;
+  createTopic?: Resolver<
+    Maybe<ResolversTypes['Topic']>,
+    ParentType,
+    ContextType,
+    RequireFields<MutationCreateTopicArgs, 'input'>
+  >;
+  createSubTopic?: Resolver<
+    Maybe<ResolversTypes['Topic']>,
+    ParentType,
+    ContextType,
+    RequireFields<MutationCreateSubTopicArgs, 'input'>
+  >;
+  updateTopic?: Resolver<
+    Maybe<ResolversTypes['Topic']>,
+    ParentType,
+    ContextType,
+    RequireFields<MutationUpdateTopicArgs, 'topicId' | 'input'>
+  >;
+  deleteTopic?: Resolver<
+    Maybe<ResolversTypes['Topic']>,
+    ParentType,
+    ContextType,
+    RequireFields<MutationDeleteTopicArgs, 'topicId'>
+  >;
+  followTopic?: Resolver<
+    Maybe<ResolversTypes['Topic']>,
+    ParentType,
+    ContextType,
+    RequireFields<MutationFollowTopicArgs, 'topicId'>
+  >;
+  unfollowTopic?: Resolver<
+    Maybe<ResolversTypes['Topic']>,
+    ParentType,
+    ContextType,
+    RequireFields<MutationUnfollowTopicArgs, 'topicId'>
+  >;
 }>;
 
 export type NodeResolvers<
   ContextType = Context,
   ParentType extends ResolversParentTypes['Node'] = ResolversParentTypes['Node']
 > = ResolversObject<{
-  __resolveType: TypeResolveFn<'User' | 'Post', ParentType, ContextType>;
+  __resolveType: TypeResolveFn<
+    'User' | 'Post' | 'Topic',
+    ParentType,
+    ContextType
+  >;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
 }>;
 
@@ -479,6 +631,28 @@ export type PostConnectionResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type TopicResolvers<
+  ContextType = Context,
+  ParentType extends ResolversParentTypes['Topic'] = ResolversParentTypes['Topic']
+> = ResolversObject<{
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  isActived?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  parent?: Resolver<Maybe<ResolversTypes['Topic']>, ParentType, ContextType>;
+  children?: Resolver<Array<ResolversTypes['Topic']>, ParentType, ContextType>;
+  childrenCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  followerCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  posts?: Resolver<
+    Maybe<Array<ResolversTypes['Post']>>,
+    ParentType,
+    ContextType,
+    RequireFields<TopicPostsArgs, 'limit'>
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type Resolvers<ContextType = Context> = ResolversObject<{
   DateTime?: GraphQLScalarType;
   Query?: QueryResolvers<ContextType>;
@@ -490,6 +664,7 @@ export type Resolvers<ContextType = Context> = ResolversObject<{
   Post?: PostResolvers<ContextType>;
   PostEdge?: PostEdgeResolvers<ContextType>;
   PostConnection?: PostConnectionResolvers<ContextType>;
+  Topic?: TopicResolvers<ContextType>;
 }>;
 
 /**

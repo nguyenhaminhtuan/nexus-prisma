@@ -10,67 +10,102 @@ generator client {
 }
 
 enum UserStatus {
-  enabled
-  disabled
+  ENABLED   @map("enabled")
+  DISABLED  @map("disabled")
 }
 
-model User {
-  id            String     @id @default(uuid())
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  email         String     @unique
-  fullName      String
-  avatarUrl     String?
-  status        UserStatus @default(disabled)
-  emailVerified Boolean    @default(false)
-  disabledAt    DateTime?
-  lastLoginAt   DateTime?
-  profile       Profile?
-  followers     User[]     @relation("UserFollows", references: [id])
-  following     User[]     @relation("UserFollows", references: [id])
-  posts         Post[]
-  likes         Like[]
-  comments      Comment[]
+enum UserGender {
+  MALE    @map("male")
+  FEMALE  @map("female")
+  OTHER   @map("other")
 }
 
-enum Gender {
-  male
-  female
-  other
-}
-
-model Profile {
-  id       String    @id @default(cuid())
-  bio      String    @default("")
-  gender   Gender?
-  birthDay DateTime?
-  phone    String?
-  userId   String
-  user     User      @relation(fields: [userId], references: [id])
-}
-
-model Post {
-  id          String    @id @default(cuid())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  content     String
-  isPublished Boolean   @default(false)
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  likes       Like[]
-  comments    Comment[]
+enum PostStatus {
+  DRAFT      @map("draft")
+  PUBLISHED  @map("published")
+  ARCHIVED   @map("archived")
 }
 
 enum LikeType {
-  like
-  heart
+  LIKE   @map("like")
+  HEART  @map("heart")
+}
+
+model User {
+  id              String     @id @default(uuid())
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  email           String     @unique
+  fullName        String
+  avatarUrl       String?
+  coverPicUrl     String?
+  status          UserStatus @default(DISABLED)
+  isVerified      Boolean    @default(false)
+  emailVerified   Boolean    @default(false)
+  disabledAt      DateTime?
+  lastLoginAt     DateTime?
+  profile         Profile?
+  posts           Post[]
+  savedPosts      Post[]     @relation("UserSavePost")
+  followingTopics Topic[]    @relation("UserFollowTopic")
+  likes           Like[]
+  comments        Comment[]
+}
+
+model Profile {
+  id       String      @id @default(cuid())
+  bio      String      @default("")
+  gender   UserGender?
+  birthDay DateTime?
+  phone    String?
+  userId   String
+  user     User        @relation(fields: [userId], references: [id])
+}
+
+model Topic {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String   @unique
+  isActived Boolean  @default(true)
+  parentId  String?
+  parent    Topic?   @relation("ParentChildrenTopic", fields: [parentId], references: [id])
+  children  Topic[]  @relation("ParentChildrenTopic")
+  followers User[]   @relation("UserFollowTopic")
+  posts     Post[]   @relation("PostTopic")
+
+  @@index([name])
+}
+
+model Post {
+  id           String       @id @default(cuid())
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  content      String
+  status       PostStatus   @default(DRAFT)
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  topics       Topic[]      @relation("PostTopic")
+  series       PostSeries[]
+  likes        Like[]
+  comments     Comment[]
+  savedByUsers User[]       @relation("UserSavePost")
+}
+
+model PostSeries {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  postId    String
+  posts     Post     @relation(fields: [postId], references: [id])
 }
 
 model Like {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  type      LikeType @default(like)
+  type      LikeType @default(LIKE)
   userId    String
   postId    String
   commentId String
@@ -85,11 +120,11 @@ model Comment {
   updatedAt DateTime  @updatedAt
   body      String
   userId    String
-  postId    String
-  commentId String
+  postId    String?
+  commentId String?
   user      User      @relation(fields: [userId], references: [id])
-  post      Post      @relation(fields: [postId], references: [id])
-  comment   Comment   @relation("CommentReplies", fields: [commentId], references: [id])
+  post      Post?     @relation(fields: [postId], references: [id])
+  comment   Comment?  @relation("CommentReplies", fields: [commentId], references: [id])
   replies   Comment[] @relation("CommentReplies")
   likes     Like[]
 }

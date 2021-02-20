@@ -42,14 +42,16 @@ export const User = gql`
 export const UserResolver: Resolvers = {
   User: {
     posts: async (root, args, ctx) => {
-      const posts = await ctx.db.user
-        .findUnique({ where: { id: root.id } })
-        .posts();
+      const user = await ctx.db.user.findUnique({
+        where: { id: root.id },
+        include: { posts: true },
+      });
+      if (!user) return null;
       // const posts = await ctx.loader.getPostsByUser.load({
       //   id: root.id,
       //   take: 10,
       // });
-      return posts;
+      return user.posts;
     },
   },
   Query: {
